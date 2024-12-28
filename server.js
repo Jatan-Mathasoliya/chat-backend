@@ -44,7 +44,8 @@ app.post("/api/signup", async (req, res) => {
     await user.save();
     res.status(201).json({ message: "User created successfully." });
   } catch (error) {
-    res.status(500).json({ message: "Error creating user." });
+    console.log(error);
+    res.status(500).json(error);
   }
 });
 
