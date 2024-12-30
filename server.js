@@ -23,7 +23,10 @@ app.use(express.json());
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log(err));
+  .catch((err) => {
+    console.error("MongoDB connection error:", err.message);
+    console.error("Error stack trace:", err.stack);
+  });
 
 // JWT Secret
 const JWT_SECRET = "your_jwt_secret";
