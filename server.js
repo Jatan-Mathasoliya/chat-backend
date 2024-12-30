@@ -143,7 +143,7 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "frontend", "build")));
+  app.use(express.static(path.join(__dirname, "frontend", "dist")));
 
   // Serve index.html for all other routes (React Router will handle the rest)
   app.get("*", (req, res) => {
