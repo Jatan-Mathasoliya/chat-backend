@@ -147,7 +147,7 @@ if (process.env.NODE_ENV === "production") {
 
   // Serve index.html for all other routes (React Router will handle the rest)
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "frontend", "build", "index.html"));
+    res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
   });
 }
 
