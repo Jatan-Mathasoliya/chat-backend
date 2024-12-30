@@ -6,9 +6,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Server } from "socket.io";
 import http from "http";
-import path from 'path';
-import url from 'url';
-
 
 // Models
 import User from "./models/User.js";
@@ -135,20 +132,5 @@ io.on("connection", (socket) => {
     socket.join(userId); // Join room with user ID
   });
 });
-
-// Serve static files from the React app (build folder)
-
-
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "frontend", "dist")));
-
-  // Serve index.html for all other routes (React Router will handle the rest)
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
-  });
-}
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
