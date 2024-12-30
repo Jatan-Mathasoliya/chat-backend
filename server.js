@@ -6,7 +6,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Server } from "socket.io";
 import http from "http";
-import path from "path";
+import path from 'path';
+import url from 'url';
+
 
 // Models
 import User from "./models/User.js";
@@ -135,6 +137,11 @@ io.on("connection", (socket) => {
 });
 
 // Serve static files from the React app (build folder)
+
+
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "frontend", "build")));
 
