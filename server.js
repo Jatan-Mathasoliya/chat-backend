@@ -21,7 +21,7 @@ app.use(express.json());
 
 // MongoDB Connection
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("MongoDB connected"))
   .catch((err) => {
     console.error("MongoDB connection error:", err.message);
@@ -29,7 +29,7 @@ mongoose
   });
 
 // JWT Secret
-const JWT_SECRET = "your_jwt_secret";
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
 // Routes
 // Signup Route
@@ -48,7 +48,7 @@ app.post("/api/signup", async (req, res) => {
     res.status(201).json({ message: "User created successfully." });
   } catch (error) {
     console.log(error);
-    res.status(500).json(error);
+    res.status(500).json({ message: "Error creating user.", error });
   }
 });
 
@@ -66,7 +66,7 @@ app.post("/api/login", async (req, res) => {
     return res.status(401).json({ message: "Invalid password." });
   }
 
-  const token = jwt.sign({ id: user._id }, JWT_SECRET);
+  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
   res.status(200).json({ token, userId: user._id });
 });
 
@@ -76,7 +76,7 @@ app.get("/api/users", async (req, res) => {
     const users = await User.find({}, { password: 0 }); // Exclude passwords
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({error});
+    res.status(500).json({ error });
   }
 });
 
@@ -98,7 +98,7 @@ app.get("/api/messages/:from/:to", async (req, res) => {
   }
 });
 
-// Save Message
+// Save Message (Optional: Not needed if using Socket.IO to save messages)
 app.post("/api/messages", async (req, res) => {
   const { sender, receiver, content } = req.body;
 
@@ -115,7 +115,7 @@ app.post("/api/messages", async (req, res) => {
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "*", // Update this to your client URL in production
     methods: ["GET", "POST"],
   },
 });
@@ -123,22 +123,37 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("New user connected");
 
-  socket.on("join", (userId) => {
-    socket.join(userId); // Join the user to their own room
-    console.log(`${userId} joined the room`);
+  // Listen for join-room event with userId
+  socket.on("join-room", (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined their room`);
   });
 
+  // Listen for send-message event
   socket.on("send-message", async (data) => {
     const { sender, receiver, content } = data;
+    console.log("Received send-message:", data);
 
-    // Save message to database
-    const message = new Message({ sender, receiver, content });
-    await message.save();
+    try {
+      const message = new Message({ sender, receiver, content });
+      await message.save();
+      console.log("Message saved:", message);
 
-    // Emit message to the receiver's room
-    io.to(receiver).emit("receive-message", { sender, content });
+      // Emit message to receiver's room
+      io.to(receiver).emit("receive-message", {
+        sender,
+        content,
+        createdAt: message.createdAt,
+      });
+      console.log(`Message emitted to ${receiver}`);
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
   });
 });
-
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
