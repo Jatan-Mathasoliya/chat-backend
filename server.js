@@ -123,14 +123,22 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("New user connected");
 
-  socket.on("send-message", (data) => {
-    const { sender, receiver, content } = data;
-    io.to(receiver).emit("receive-message", { sender, content });
+  socket.on("join", (userId) => {
+    socket.join(userId); // Join the user to their own room
+    console.log(`${userId} joined the room`);
   });
 
-  socket.on("join", (userId) => {
-    socket.join(userId); // Join room with user ID
+  socket.on("send-message", async (data) => {
+    const { sender, receiver, content } = data;
+
+    // Save message to database
+    const message = new Message({ sender, receiver, content });
+    await message.save();
+
+    // Emit message to the receiver's room
+    io.to(receiver).emit("receive-message", { sender, content });
   });
 });
+
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
